@@ -82,44 +82,62 @@ function gameBoard() {
     }
 }
 
-function Player(name, gameBoard){
+function Player(name, board){
+    if(name === "computer"){
+        let randomRow = Math.floor(Math.random() * 10);
+        let randomCol = Math.floor(Math.random() * 10);
     return {
         getName(){
             return name;
         },
         getBoard(){
-            return gameBoard;
+            return board;
         },
-        launchAttack(enemyGameBoard, row = null, col = null){
-            if(enemyGameBoard[row][col] === "miss" || enemyGameBoard[row][col].hasBeenHit === true) {return}; // if already missAttack and already been hit, do nothing.
-            if(name === "computer"){
-                let randomRow = Math.floor(Math.random() * 10);
-                let randomCol = Math.floor(Math.random() * 10);
-                let checkCell = enemyGameBoard[randomRow][randomCol];
-                while(checkCell !== ""){
-                    randomRow = Math.floor(Math.random() * 10);
-                    randomCol = Math.floor(Math.random() * 10);
-                    checkCell = enemyGameBoard[randomRow][randomCol];
-                }
+        launchAttack(enemyGameBoard){
+            let checkCell = enemyGameBoard.getBoardAtIndex(randomRow,randomCol);
+            while(checkCell !== ""){
+                randomRow = Math.floor(Math.random() * 10);
+                randomCol = Math.floor(Math.random() * 10);
+                checkCell = enemyGameBoard.getBoardAtIndex(randomRow,randomCol)
+            }
                 enemyGameBoard.receiveAttack(randomRow,randomCol);
-            } else {
-                enemyGameBoard.receiveAttack(row,col);
             }
             
         }
+    } 
+    return {
+        getName(){
+            return name;
+        },
+        getBoard(){
+            return board;
+        },
+        launchAttack(enemyGameBoard, row, col){
+            if(enemyGameBoard.getBoardAtIndex(row,col) === "miss" || enemyGameBoard.getBoardAtIndex(row,col).hasBeenHit === true) {return}; // if already missAttack and already been hit, do nothing.
+            enemyGameBoard.receiveAttack(row,col);
+        }    
     }
 }
 
-// const ship4 = shipFactory(4);
-// console.log(ship4.isSunk());
-// console.log(ship4.getLength())
+
+
 
 const player1Board = gameBoard();
+const computerBoard = gameBoard();
+
 const ship4 = shipFactory(4);
 // const ship3 = shipFactory(3);
 player1Board.placeShip(ship4,2,2,"horizontal");
 
+computerBoard.placeShip(ship4,3,3,"horizontal")
 
+const player1 = Player("p1", player1Board);
+const computerPlayer = Player("computer", computerBoard);
 
+player1.launchAttack(computerBoard,3,3)
+console.log(computerBoard.getBoard())
+
+computerPlayer.launchAttack(player1Board)
+console.log(player1Board.getBoard())
 
 // gameController need to have, every time ship added, put the ship in some placeholder array, so can check isEveryShipSunk()
