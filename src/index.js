@@ -51,6 +51,11 @@ function gameBoard() {
                     for(let i=0; i<ship.getLength();i+=1){
                         board[row][col+i] = cellObj(shipObj);
                     }
+                    for(let i = row-1; i<= row+1;i+=1){
+                        for(let j = col-1; j<col+ship.getLength()+1;j+=1){
+                            board[i][j] = "x";
+                        }
+                    }    
                     break;
                 case "vertical":
                     for(let i=0; i<ship.getLength();i+=1){
