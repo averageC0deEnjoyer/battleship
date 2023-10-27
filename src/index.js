@@ -151,9 +151,20 @@ function Player(name, board) {
 }
 
 function gameController(){
-    let player1GameBoard = 
-    let player1 = Player('player1')
+    
+    
+    const player1GameBoard = gameBoard(); 
+    const player1 = Player("player1", player1GameBoard);
+    const computerGameBoard = gameBoard();
+    const computer = Player("computer", computerGameBoard);
+
+
+
 }
+
+
+
+
 
 const player1Board = gameBoard();
 
