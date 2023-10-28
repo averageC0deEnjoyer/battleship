@@ -74,7 +74,7 @@ function gameBoard() {
           for (let i = row - 1; i <= row + ship.getLength(); i += 1) {
             for (let j = col - 1; j <= col + 1; j+=1) {
               if (board[i][j] === "") {
-                board[i][j] = "x";
+                board[i][j] = "x"; // rather than using x, another better idea is setting every cell with an object, and assign x to 'data' property.
               }
             }
           }
@@ -118,7 +118,7 @@ function Player(name, board) {
         return name;
       },
       getBoard() {
-        return board;
+        return board;  // this will return object
       },
       launchAttack(enemyGameBoard) {
         let checkCell = enemyGameBoard.getBoardAtIndex(randomRow, randomCol);
@@ -130,50 +130,102 @@ function Player(name, board) {
         enemyGameBoard.receiveAttack(randomRow, randomCol);
       },
     };
-  }
-  return {
-    getName() {
-      return name;
-    },
-    getBoard() {
-      return board;
-    },
-    launchAttack(enemyGameBoard, row, col) {
-      if (
-        enemyGameBoard.getBoardAtIndex(row, col) === "miss" ||
-        enemyGameBoard.getBoardAtIndex(row, col).hasBeenHit === true
-      ) {
-        return;
-      } // if already missAttack and already been hit, do nothing.
-      enemyGameBoard.receiveAttack(row, col);
-    },
-  };
+  } 
+    return {
+      getName() {
+        return name;
+      },
+      getBoard() {
+        return board; // this will return object
+      },
+      launchAttack(enemyGameBoard, row, col) {
+        if (
+          enemyGameBoard.getBoardAtIndex(row, col) === "miss" ||
+          enemyGameBoard.getBoardAtIndex(row, col).hasBeenHit === true
+        ) {
+          return; // this if should be put in the ccontroller maybe(controller handle logic/flow), so if row col have somethig, the playRound function not execute the other func
+        } // if already missAttack and already been hit, do nothing.
+        enemyGameBoard.receiveAttack(row, col);
+      },
+    };
+  
 }
 
 function gameController(){
     
-    
+    // initialize gameboard
     const player1GameBoard = gameBoard(); 
-    const player1 = Player("player1", player1GameBoard);
     const computerGameBoard = gameBoard();
+
+    // put ship on the player gameboard
+    const ship4player = shipFactory(4);
+    const ship3player = shipFactory(3);
+    const ship2player = shipFactory(2);
+    const ship1player = shipFactory(1);
+
+    player1GameBoard.placeShip(ship4player, 2, 2, "horizontal");
+    player1GameBoard.placeShip(ship3player, 4, 4, "vertical");
+    player1GameBoard.placeShip(ship2player, 6, 6, "horizontal");
+    player1GameBoard.placeShip(ship1player, 8, 8, "horizontal");
+
+    // put ship on the computer gameboard
+
+    const ship4computer = shipFactory(4);
+    const ship3computer = shipFactory(3);
+    const ship2computer = shipFactory(2);
+    const ship1computer = shipFactory(1);
+    computerGameBoard.placeShip(ship4computer, 2, 2, "horizontal");
+    computerGameBoard.placeShip(ship3computer, 4, 4, "vertical");
+    computerGameBoard.placeShip(ship2computer, 6, 6, "horizontal");
+    computerGameBoard.placeShip(ship1computer, 8, 8, "horizontal");
+
+    // initialize player 
+    const player1 = Player("player1", player1GameBoard);
     const computer = Player("computer", computerGameBoard);
+    const players = [player1, computer];
+
+    let activePlayer = players[0];
+    let activePlayerEnemy = players[1];
+
+    const switchPlayerTurn = () => {
+      activePlayer = activePlayer === players[0] ? players[1] : players[0];
+      activePlayerEnemy = activePlayerEnemy === players[1] ? players[0] : players[1];
+    }
+
+    const getActivePlayer = () => activePlayer;
+
+    const getActivePlayerEnemy = () => activePlayerEnemy;
 
 
-
+    const playRound = (row,col) => { // add the guard(if row col already been hit, then do nothing on the DOM), playRound only care for the logic
+        activePlayer.launchAttack(activePlayerEnemy.getBoard(),row,col);
+        // for(let i = 0; i < players.length; i+= 1) {
+        //   if(players[i].getBoard().isAllShipSunk()){
+        //     return `${players[i].name} is the winner`
+        //   }
+        // }
+        switchPlayerTurn();
+    }
+    return {
+      playRound,
+      getActivePlayer,
+      getActivePlayerEnemy,
+      getActivePlayerBoard: activePlayer.getBoard().getBoard,
+      getActivePlayerEnemyBoard: activePlayerEnemy.getBoard().getBoard
+    };
 }
 
+const gameControllerPlaceholder = gameController()
 
 
+console.log(gameControllerPlaceholder.getActivePlayer().getName())
 
+console.log(gameControllerPlaceholder.getActivePlayerEnemy().getName())
+// console.log(gameControllerPlaceholder.getActivePlayerBoard())
+gameControllerPlaceholder.playRound(2,2)
+console.log(gameControllerPlaceholder.getActivePlayer().getName())
+console.log(gameControllerPlaceholder.getActivePlayerEnemy().getName())
+// console.log(gameControllerPlaceholder.getActivePlayerBoard())
 
-const player1Board = gameBoard();
-
-const ship4 = shipFactory(4);
-const ship3 = shipFactory(3);
-
-player1Board.placeShip(ship4, 2, 2, "horizontal");
-player1Board.placeShip(ship3, 1, 2, "vertical");
-
-console.log(player1Board.getBoard());
 
 // gameController need to have, every time ship added, put the ship in some placeholder array, so can check isEveryShipSunk()
