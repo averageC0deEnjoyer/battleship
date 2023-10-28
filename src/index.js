@@ -28,7 +28,7 @@ function gameBoard() {
       board[i].push("");
     }
   }
-
+  //another better way, push all cellobj to board, and add isAvailable prop
   const cellObj = (data) => ({
     hasBeenHit: false,
     data, // to save ship object data
@@ -110,41 +110,42 @@ function gameBoard() {
 }
 
 function Player(name, board) {
-  if (name === "computer") {
-    let randomRow = Math.floor(Math.random() * 10);
-    let randomCol = Math.floor(Math.random() * 10);
+  // PLAYER OBJECT SHOULD ONLY HANDLE CREATING NEW OBJ, NOT LOGIC 
+  // if (name === "computer") {
+  //   let randomRow = Math.floor(Math.random() * 10);
+  //   let randomCol = Math.floor(Math.random() * 10);
+  //   return {
+  //     getName() {
+  //       return name;
+  //     },
+  //     getBoard() {
+  //       return board;  // this will return object
+  //     },
+  //     launchAttack(enemyGameBoard) {
+  //       let checkCell = enemyGameBoard.getBoardAtIndex(randomRow, randomCol);
+  //       while (checkCell !== "") {
+  //         randomRow = Math.floor(Math.random() * 10);
+  //         randomCol = Math.floor(Math.random() * 10);
+  //         checkCell = enemyGameBoard.getBoardAtIndex(randomRow, randomCol);
+  //       }
+  //       enemyGameBoard.receiveAttack(randomRow, randomCol);
+  //     },
+  //   };
+  // } 
     return {
       getName() {
         return name;
       },
-      getBoard() {
-        return board;  // this will return object
-      },
-      launchAttack(enemyGameBoard) {
-        let checkCell = enemyGameBoard.getBoardAtIndex(randomRow, randomCol);
-        while (checkCell !== "") {
-          randomRow = Math.floor(Math.random() * 10);
-          randomCol = Math.floor(Math.random() * 10);
-          checkCell = enemyGameBoard.getBoardAtIndex(randomRow, randomCol);
-        }
-        enemyGameBoard.receiveAttack(randomRow, randomCol);
-      },
-    };
-  } 
-    return {
-      getName() {
-        return name;
-      },
-      getBoard() {
+      getBoardObj() {
         return board; // this will return object
       },
       launchAttack(enemyGameBoard, row, col) {
-        if (
-          enemyGameBoard.getBoardAtIndex(row, col) === "miss" ||
-          enemyGameBoard.getBoardAtIndex(row, col).hasBeenHit === true
-        ) {
-          return; // this if should be put in the ccontroller maybe(controller handle logic/flow), so if row col have somethig, the playRound function not execute the other func
-        } // if already missAttack and already been hit, do nothing.
+        // if (
+        //   enemyGameBoard.getBoardAtIndex(row, col) === "miss" ||
+        //   enemyGameBoard.getBoardAtIndex(row, col).hasBeenHit === true
+        // ) {
+        //   return; // this if should be put in the ccontroller maybe(controller handle logic/flow), so if row col have somethig, the playRound function not execute the other func
+        // } // if already missAttack and already been hit, do nothing.
         enemyGameBoard.receiveAttack(row, col);
       },
     };
@@ -174,7 +175,7 @@ function gameController(){
     const ship3computer = shipFactory(3);
     const ship2computer = shipFactory(2);
     const ship1computer = shipFactory(1);
-    computerGameBoard.placeShip(ship4computer, 2, 2, "horizontal");
+    computerGameBoard.placeShip(ship4computer, 1, 1, "horizontal");
     computerGameBoard.placeShip(ship3computer, 4, 4, "vertical");
     computerGameBoard.placeShip(ship2computer, 6, 6, "horizontal");
     computerGameBoard.placeShip(ship1computer, 8, 8, "horizontal");
@@ -187,18 +188,23 @@ function gameController(){
     let activePlayer = players[0];
     let activePlayerEnemy = players[1];
 
+
+    const getActivePlayer = () => activePlayer;
+    const getActivePlayerName = () => getActivePlayer().getName(); //chain like this to be dynamic (bug 1-2hours)
+    const getActivePlayerBoard = () => getActivePlayer().getBoardObj().getBoard();
+
+    const getActivePlayerEnemy = () => activePlayerEnemy;
+    const getActivePlayerEnemyName = () => getActivePlayerEnemy().getName();
+    const getActivePlayerEnemyBoard = () => getActivePlayerEnemy().getBoardObj().getBoard();
+
     const switchPlayerTurn = () => {
       activePlayer = activePlayer === players[0] ? players[1] : players[0];
       activePlayerEnemy = activePlayerEnemy === players[1] ? players[0] : players[1];
+
     }
 
-    const getActivePlayer = () => activePlayer;
-
-    const getActivePlayerEnemy = () => activePlayerEnemy;
-
-
     const playRound = (row,col) => { // add the guard(if row col already been hit, then do nothing on the DOM), playRound only care for the logic
-        activePlayer.launchAttack(activePlayerEnemy.getBoard(),row,col);
+        activePlayer.launchAttack(activePlayerEnemy.getBoardObj(),row,col);
         // for(let i = 0; i < players.length; i+= 1) {
         //   if(players[i].getBoard().isAllShipSunk()){
         //     return `${players[i].name} is the winner`
@@ -208,24 +214,19 @@ function gameController(){
     }
     return {
       playRound,
-      getActivePlayer,
-      getActivePlayerEnemy,
-      getActivePlayerBoard: activePlayer.getBoard().getBoard,
-      getActivePlayerEnemyBoard: activePlayerEnemy.getBoard().getBoard
+      getActivePlayerName,
+      getActivePlayerEnemyName,
+      getActivePlayerBoard,
+      getActivePlayerEnemyBoard
     };
 }
 
 const gameControllerPlaceholder = gameController()
 
 
-console.log(gameControllerPlaceholder.getActivePlayer().getName())
-
-console.log(gameControllerPlaceholder.getActivePlayerEnemy().getName())
-// console.log(gameControllerPlaceholder.getActivePlayerBoard())
-gameControllerPlaceholder.playRound(2,2)
-console.log(gameControllerPlaceholder.getActivePlayer().getName())
-console.log(gameControllerPlaceholder.getActivePlayerEnemy().getName())
-// console.log(gameControllerPlaceholder.getActivePlayerBoard())
+gameControllerPlaceholder.playRound(1,1)
+console.log(gameControllerPlaceholder.getActivePlayerName())
+console.log(gameControllerPlaceholder.getActivePlayerBoard())
 
 
 // gameController need to have, every time ship added, put the ship in some placeholder array, so can check isEveryShipSunk()
