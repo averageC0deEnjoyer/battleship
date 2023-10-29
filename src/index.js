@@ -1,3 +1,5 @@
+// import "./style.css"
+
 function shipFactory(length) {
   let shipHit = 0;
   return {
@@ -118,12 +120,6 @@ function Player(name, board) {
         return board; // this will return object
       },
       launchAttack(enemyGameBoard, row, col) {
-        // if (
-        //   enemyGameBoard.getBoardAtIndex(row, col) === "miss" ||
-        //   enemyGameBoard.getBoardAtIndex(row, col).hasBeenHit === true
-        // ) {
-        //   return; // this if should be put in the ccontroller maybe(controller handle logic/flow), so if row col have somethig, the playRound function not execute the other func
-        // } // if already missAttack and already been hit, do nothing.
         enemyGameBoard.receiveAttack(row, col);
       },
     };
@@ -166,15 +162,18 @@ function gameController(){
     let activePlayer = players[0];
     let activePlayerEnemy = players[1];
     let result;
+    let isOver = 0;
 
 
     const getActivePlayer = () => activePlayer;
     const getActivePlayerName = () => getActivePlayer().getName(); // chain like this to be dynamic (bug 1-2hours)
     const getActivePlayerBoard = () => getActivePlayer().getBoardObj().getBoard();
+    const getActivePlayerBoardObj = () => getActivePlayer().getBoardObj();
 
     const getActivePlayerEnemy = () => activePlayerEnemy;
     const getActivePlayerEnemyName = () => getActivePlayerEnemy().getName();
     const getActivePlayerEnemyBoard = () => getActivePlayerEnemy().getBoardObj().getBoard();
+    const getActivePlayerEnemyBoardObj = () => getActivePlayerEnemy().getBoardObj();
 
     const getResultMessage = () => result;
 
@@ -187,14 +186,18 @@ function gameController(){
     const playRound = (row,col) => { // add the guard(if row col already been hit, then do nothing on the DOM), playRound only care for the logic
       if (
           activePlayerEnemy.getBoardObj().getBoardAtIndex(row, col) === "miss" ||
-          activePlayerEnemy.getBoardObj().getBoardAtIndex(row, col).hasBeenHit === true
+          activePlayerEnemy.getBoardObj().getBoardAtIndex(row, col).hasBeenHit === true ||
+          isOver === 1
         ) {
           return;
         } 
+
+          
           activePlayer.launchAttack(activePlayerEnemy.getBoardObj(),row,col);
           for(let i = 0; i < players.length; i+= 1) {
             if(players[i].getBoardObj().isAllShipSunk()){
               result = `${players[Math.abs(i-1)].getName()} is the winner`
+              isOver = 1;
               return; // exit if there is winner already
             }
           }
@@ -209,14 +212,17 @@ function gameController(){
                 checkCell = activePlayerEnemy.getBoardObj().getBoardAtIndex(randomRow, randomCol);
               }
 
+              
              activePlayer.launchAttack(activePlayerEnemy.getBoardObj(),randomRow,randomCol);
              for(let i = 0; i < players.length; i+= 1) {
               if(players[i].getBoardObj().isAllShipSunk()){
                 result = `${players[Math.abs(i-1)].getName()} is the winner`
+                isOver = 1;
+                switchPlayerTurn();
                 return; // exit if there is winner already
               }
               }
-            switchPlayerTurn();
+              switchPlayerTurn();
           }
       }
     return {
@@ -225,36 +231,118 @@ function gameController(){
       getActivePlayerEnemyName,
       getActivePlayerBoard,
       getActivePlayerEnemyBoard,
+      getActivePlayerBoardObj,
+      getActivePlayerEnemyBoardObj,
       getResultMessage
     };
 }
 
-const gameControllerPlaceholder = gameController()
 
-console.log(gameControllerPlaceholder.getActivePlayerName())
-console.log(gameControllerPlaceholder.getActivePlayerBoard())
+function screenController(){
+  const gameControllerPlaceholder = gameController();
+  const playerContainerDiv = document.querySelector(".player-container");
+  const computerContainerDiv = document.querySelector(".computer-container");
+  const winnerResult = document.querySelector(".result")
+  // even though the active player is going to switch, but every time playRound() the activePlayer will be back to player, so doesnt really matter. in simple terms, after every playRound, activePlayer will be the human1/player1. activePlayer state always player1
+  
+
+  const updateScreen = () => {
+    playerContainerDiv.textContent = "";
+    computerContainerDiv.textContent = "";
+    const playerBoard = gameControllerPlaceholder.getActivePlayerBoard(); // take latest condition of the board
+    const computerBoard = gameControllerPlaceholder.getActivePlayerEnemyBoard();
+
+    // update playerBoard
+    playerBoard.forEach((row,indexI) => {
+      row.forEach((cell,indexJ) => {
+        const cellDiv = document.createElement("div");
+        cellDiv.classList.add("cell");
+        cellDiv.dataset.row = indexI;
+        cellDiv.dataset.column = indexJ;
+        if(typeof cell === "object" && cell.hasBeenHit === false){
+          cellDiv.style.backgroundColor = "green";
+        } else if ((typeof cell === "object" && cell.hasBeenHit === true)) {
+          cellDiv.style.backgroundColor = "red";
+        } else if (cell === "miss") {
+          cellDiv.style.backgroundColor = "grey";
+        }
+        playerContainerDiv.appendChild(cellDiv);
+      })
+    })
+
+    // update computerBoard
+    computerBoard.forEach((row,indexI) => {
+      row.forEach((cell,indexJ) => {
+        const cellButton = document.createElement("button");
+        cellButton.classList.add("cell");
+        cellButton.classList.add("button");
+        cellButton.dataset.row = indexI;
+        cellButton.dataset.column = indexJ;
+        if ((typeof cell === "object" && cell.hasBeenHit === true)) {
+          cellButton.style.backgroundColor = "red";
+        } else if (cell === "miss") {
+          cellButton.style.backgroundColor = "grey";
+        } 
+        computerContainerDiv.appendChild(cellButton);
+      })
+    })
+
+    // if someone wins, display the winner to the DOM. 
+    if(gameControllerPlaceholder.getActivePlayerBoardObj().isAllShipSunk() || gameControllerPlaceholder.getActivePlayerEnemyBoardObj().isAllShipSunk()) {
+        winnerResult.textContent = gameControllerPlaceholder.getResultMessage();}
+  }
+
+  function clickHandlerBoard(e){
+    const selectedRow = e.target.dataset.row;
+    const selectedColumn = e.target.dataset.column;
+
+    gameControllerPlaceholder.playRound(selectedRow,selectedColumn);
+    updateScreen();
+    if(gameControllerPlaceholder.getActivePlayerBoardObj().isAllShipSunk() || gameControllerPlaceholder.getActivePlayerEnemyBoardObj().isAllShipSunk()){
+      
+    }
+  }
+
+  computerContainerDiv.addEventListener("click",clickHandlerBoard);
+
+  // if(gameControllerPlaceholder.getActivePlayerBoardObj().isAllShipSunk() || gameControllerPlaceholder.getActivePlayerEnemyBoardObj().isAllShipSunk()) {
+  //   winnerResult.textContent = gameControllerPlaceholder.getResultMessage();
+  //   computerContainerDiv.removeEventListener("click",clickHandlerBoard);
+  // }
+
+  updateScreen();// initial render
+}
 
 
-console.log(gameControllerPlaceholder.getResultMessage())
-gameControllerPlaceholder.playRound(1,1)
-gameControllerPlaceholder.playRound(1,2)
-gameControllerPlaceholder.playRound(1,3)
-gameControllerPlaceholder.playRound(1,4)
-gameControllerPlaceholder.playRound(4,4)
-gameControllerPlaceholder.playRound(5,4)
-gameControllerPlaceholder.playRound(6,4)
-gameControllerPlaceholder.playRound(6,6)
-gameControllerPlaceholder.playRound(6,7)
-gameControllerPlaceholder.playRound(8,8)
-console.log(gameControllerPlaceholder.getResultMessage())
+screenController();
+// const gameControllerPlaceholder = gameController()
+
+// console.log(gameControllerPlaceholder.getActivePlayerName())
+// console.log(gameControllerPlaceholder.getActivePlayerBoard())
 
 
-console.log(gameControllerPlaceholder.getActivePlayerName())
-console.log(gameControllerPlaceholder.getActivePlayerBoard())
+// console.log(gameControllerPlaceholder.getResultMessage())
+// gameControllerPlaceholder.playRound(1,1)
+// gameControllerPlaceholder.playRound(1,2)
+// gameControllerPlaceholder.playRound(1,3)
+// gameControllerPlaceholder.playRound(1,4)
+// gameControllerPlaceholder.playRound(4,4)
+// gameControllerPlaceholder.playRound(5,4)
+// gameControllerPlaceholder.playRound(6,4)
+// gameControllerPlaceholder.playRound(6,6)
+// gameControllerPlaceholder.playRound(6,7)
+// gameControllerPlaceholder.playRound(8,8)
+// console.log(gameControllerPlaceholder.getResultMessage())
 
-console.log(gameControllerPlaceholder.getActivePlayerEnemyName())
-console.log(gameControllerPlaceholder.getActivePlayerEnemyBoard())
+
+// console.log(gameControllerPlaceholder.getActivePlayerName())
+// console.log(gameControllerPlaceholder.getActivePlayerBoard())
+
+// console.log(gameControllerPlaceholder.getActivePlayerEnemyName())
+// console.log(gameControllerPlaceholder.getActivePlayerEnemyBoard())
 
 // another idea (every cell push and cellObj , then add isAvailable prop when placing Ship to add contraints cant put surround oneplusCoords)
 
 // gameController need to have, every time ship added, put the ship in some placeholder array, so can check isEveryShipSunk()
+
+
