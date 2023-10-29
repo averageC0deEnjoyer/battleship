@@ -2,6 +2,10 @@
 
 function shipFactory(length) {
   let shipHit = 0;
+
+  const reset = () => {
+    shipHit = 0;
+  }
   return {
     getLength() {
       return length;
@@ -19,6 +23,7 @@ function shipFactory(length) {
       }
       return false;
     },
+    reset
   };
 }
 
@@ -35,6 +40,14 @@ function gameBoard() {
     hasBeenHit: false,
     data, // to save ship object data
   });
+
+  const reset = () => {
+    for (let i = 0; i < 10; i += 1) {
+      for (let j = 0; j < 10; j += 1) {
+        board[i][j] = "";
+      }
+    }
+  }
 
   return {
     getBoardAtIndex(row, col) {
@@ -58,6 +71,9 @@ function gameBoard() {
           }
           for (let i = row - 1; i <= row + 1; i += 1) {
             for (let j = col - 1; j < col + ship.getLength() + 1; j += 1) {
+              if (i < 0 || j < 0 || i > 9 || j > 9) {
+                continue;
+              }
               if (board[i][j] === "") {
                 board[i][j] = "x";
               }
@@ -75,6 +91,9 @@ function gameBoard() {
           }
           for (let i = row - 1; i <= row + ship.getLength(); i += 1) {
             for (let j = col - 1; j <= col + 1; j+=1) {
+              if (i < 0 || j < 0 || i > 9 || j > 9) {
+                continue;
+              }
               if (board[i][j] === "") {
                 board[i][j] = "x"; // rather than using x, another better idea is setting every cell with an object, and assign x to 'data' property.
               }
@@ -108,6 +127,7 @@ function gameBoard() {
       }
       return true;
     },
+    reset
   };
 }
 
@@ -128,6 +148,7 @@ function Player(name, board) {
 
 function gameController(){
     
+  
     // initialize gameboard
     const player1GameBoard = gameBoard(); 
     const computerGameBoard = gameBoard();
@@ -164,6 +185,34 @@ function gameController(){
     let result;
     let isOver = 0;
 
+    function initializeAfterReset(){
+      activePlayer = players[0];
+      activePlayerEnemy = players[1];
+      result = "";
+      isOver = 0;
+
+      ship4player.reset()
+      ship3player.reset()
+      ship2player.reset()
+      ship1player.reset()
+
+      ship4computer.reset()
+      ship3computer.reset()
+      ship2computer.reset()
+      ship1computer.reset()
+
+      player1GameBoard.placeShip(ship4player, 0, 0, "vertical");
+      player1GameBoard.placeShip(ship3player, 4, 4, "vertical");
+      player1GameBoard.placeShip(ship2player, 6, 6, "horizontal");
+      player1GameBoard.placeShip(ship1player, 8, 8, "horizontal");
+
+      computerGameBoard.placeShip(ship4computer, 1, 1, "horizontal");
+      computerGameBoard.placeShip(ship3computer, 4, 4, "vertical");
+      computerGameBoard.placeShip(ship2computer, 6, 6, "horizontal");
+      computerGameBoard.placeShip(ship1computer, 8, 8, "horizontal");
+
+    }
+
 
     const getActivePlayer = () => activePlayer;
     const getActivePlayerName = () => getActivePlayer().getName(); // chain like this to be dynamic (bug 1-2hours)
@@ -182,6 +231,7 @@ function gameController(){
       activePlayerEnemy = activePlayerEnemy === players[1] ? players[0] : players[1];
 
     }
+    
 
     const playRound = (row,col) => { // add the guard(if row col already been hit, then do nothing on the DOM), playRound only care for the logic
       if (
@@ -224,7 +274,15 @@ function gameController(){
               }
               switchPlayerTurn();
           }
+
+      
       }
+
+      const resetGame = () => {
+        player1GameBoard.reset();
+        computerGameBoard.reset();
+        initializeAfterReset();
+      }    
     return {
       playRound,
       getActivePlayerName,
@@ -233,7 +291,8 @@ function gameController(){
       getActivePlayerEnemyBoard,
       getActivePlayerBoardObj,
       getActivePlayerEnemyBoardObj,
-      getResultMessage
+      getResultMessage,
+      resetGame
     };
 }
 
@@ -289,57 +348,44 @@ function screenController(){
 
     // if someone wins, display the winner to the DOM. 
     if(gameControllerPlaceholder.getActivePlayerBoardObj().isAllShipSunk() || gameControllerPlaceholder.getActivePlayerEnemyBoardObj().isAllShipSunk()) {
-        winnerResult.textContent = gameControllerPlaceholder.getResultMessage();}
+      showWinner();
+    }
   }
+
+  function showWinner(){
+    winnerResult.textContent = gameControllerPlaceholder.getResultMessage();
+    const resetBtn = document.createElement("button")
+    resetBtn.textContent = "reset";
+    winnerResult.appendChild(resetBtn);
+    resetBtn.addEventListener("click", ()=>{
+      gameControllerPlaceholder.resetGame();
+      winnerResult.textContent = gameControllerPlaceholder.getResultMessage();
+      updateScreen();
+      resetBtn.remove();
+    });
+  }
+
+
 
   function clickHandlerBoard(e){
     const selectedRow = e.target.dataset.row;
     const selectedColumn = e.target.dataset.column;
 
+    if(!selectedRow || !selectedColumn){return} // make sure click the cell not the gaps inbetween
+
     gameControllerPlaceholder.playRound(selectedRow,selectedColumn);
     updateScreen();
-    if(gameControllerPlaceholder.getActivePlayerBoardObj().isAllShipSunk() || gameControllerPlaceholder.getActivePlayerEnemyBoardObj().isAllShipSunk()){
-      
-    }
   }
 
   computerContainerDiv.addEventListener("click",clickHandlerBoard);
 
-  // if(gameControllerPlaceholder.getActivePlayerBoardObj().isAllShipSunk() || gameControllerPlaceholder.getActivePlayerEnemyBoardObj().isAllShipSunk()) {
-  //   winnerResult.textContent = gameControllerPlaceholder.getResultMessage();
-  //   computerContainerDiv.removeEventListener("click",clickHandlerBoard);
-  // }
+
 
   updateScreen();// initial render
 }
 
 
 screenController();
-// const gameControllerPlaceholder = gameController()
-
-// console.log(gameControllerPlaceholder.getActivePlayerName())
-// console.log(gameControllerPlaceholder.getActivePlayerBoard())
-
-
-// console.log(gameControllerPlaceholder.getResultMessage())
-// gameControllerPlaceholder.playRound(1,1)
-// gameControllerPlaceholder.playRound(1,2)
-// gameControllerPlaceholder.playRound(1,3)
-// gameControllerPlaceholder.playRound(1,4)
-// gameControllerPlaceholder.playRound(4,4)
-// gameControllerPlaceholder.playRound(5,4)
-// gameControllerPlaceholder.playRound(6,4)
-// gameControllerPlaceholder.playRound(6,6)
-// gameControllerPlaceholder.playRound(6,7)
-// gameControllerPlaceholder.playRound(8,8)
-// console.log(gameControllerPlaceholder.getResultMessage())
-
-
-// console.log(gameControllerPlaceholder.getActivePlayerName())
-// console.log(gameControllerPlaceholder.getActivePlayerBoard())
-
-// console.log(gameControllerPlaceholder.getActivePlayerEnemyName())
-// console.log(gameControllerPlaceholder.getActivePlayerEnemyBoard())
 
 // another idea (every cell push and cellObj , then add isAvailable prop when placing Ship to add contraints cant put surround oneplusCoords)
 
