@@ -65,7 +65,7 @@ function gameBoard() {
       switch (direction) {
         case "horizontal":
           for (let i = col; i < col+ship.getLength(); i += 1) {
-            if (typeof board[row][col] === "object" || board[row][col] === "x") {
+            if (typeof board[row][i] === "object" || board[row][i] === "x") {
                 return;
               } // to check if i put a ship, if there is some X or already ship, then just exit func
           }
@@ -85,7 +85,7 @@ function gameBoard() {
           break;
         case "vertical":
           for (let i = row; i < row+ship.getLength(); i += 1) {
-              if (typeof board[row][col] === "object" || board[row][col] === "x") {
+              if (typeof board[i][col] === "object" || board[i][col] === "x") {
                   return;
                 } // to check if i put a ship, if there is some X or already ship, then just exit func
             }
@@ -105,6 +105,28 @@ function gameBoard() {
           break;
         default:
           break;
+      }
+    },
+    isPlaceShipValid(ship, row, col, direction){
+      switch(direction) {
+        case "horizontal":
+          for (let i = col; i < col+ship.getLength(); i += 1) {
+            if (typeof board[row][i] === "object" || board[row][i] === "x") {
+                return false;
+              } 
+          }
+          return true;
+
+        case "vertical":
+          for (let i = row; i < row+ship.getLength(); i += 1) {
+            if (typeof board[i][col] === "object" || board[i][col] === "x") {
+                return false;
+              } 
+          }
+          return true;
+
+          default:
+            break;
       }
     },
     receiveAttack(row, col) {
@@ -164,19 +186,39 @@ function gameController(){
 
     const arrayShipPlayer = [ship4player,ship3player,ship2player,ship1player]
 
-    // put ship on the computer gameboard
+
 
     const getArrayShipPlayer = () => arrayShipPlayer
+
+     // put ship on the computer gameboard
+
 
 
     const ship4computer = shipFactory("ship4Comp",4);
     const ship3computer = shipFactory("ship3Comp",3);
     const ship2computer = shipFactory("ship2Comp",2);
     const ship1computer = shipFactory("ship1Comp",1);
-    computerGameBoard.placeShip(ship4computer, 1, 1, "horizontal");
-    computerGameBoard.placeShip(ship3computer, 4, 4, "vertical");
-    computerGameBoard.placeShip(ship2computer, 6, 6, "horizontal");
-    computerGameBoard.placeShip(ship1computer, 8, 8, "horizontal");
+
+
+    const arrayShipPlayerEnemy = [ship4computer, ship3computer, ship2computer, ship1computer];
+
+    while(arrayShipPlayerEnemy.length !== 0){
+      const currentShip = arrayShipPlayerEnemy.shift();
+      let randomRow = Math.floor(Math.random() * (10 - (currentShip.getLength() - 1))) < 0 ? 0 : Math.floor(Math.random() * (10 - (currentShip.getLength() - 1)))
+      let randomCol = Math.floor(Math.random() * (10 - (currentShip.getLength() - 1))) < 0 ? 0 : Math.floor(Math.random() * (10 - (currentShip.getLength() - 1)))
+      let direction = Math.floor(Math.random() * 2) === 1 ? "vertical" : "horizontal";
+
+      let isValid = computerGameBoard.isPlaceShipValid(currentShip,randomRow, randomCol, direction)
+        while(!isValid){
+          randomRow = Math.floor(Math.random() * (10 - (currentShip.getLength() - 1))) < 0 ? 0 : Math.floor(Math.random() * (10 - (currentShip.getLength() - 1)))
+          randomCol = Math.floor(Math.random() * (10 - (currentShip.getLength() - 1))) < 0 ? 0 : Math.floor(Math.random() * (10 - (currentShip.getLength() - 1)))
+          direction = Math.floor(Math.random() * 2) === 1 ? "vertical" : "horizontal";
+          isValid = computerGameBoard.isPlaceShipValid(currentShip,randomRow, randomCol, direction);
+        }
+
+        computerGameBoard.placeShip(currentShip, randomRow, randomCol, direction)
+      }
+
 
     // initialize player 
     const player1 = Player("player1", player1GameBoard);
@@ -355,7 +397,9 @@ function screenController(){
           cellButton.style.backgroundColor = "red";
         } else if (cell === "miss") {
           cellButton.style.backgroundColor = "grey";
-        } 
+        } else if((typeof cell === "object" && cell.hasBeenHit === false)) {
+          cellButton.style.backgroundColor = "yellow";
+        }
         computerContainerDiv.appendChild(cellButton);
       })
     })
@@ -436,8 +480,7 @@ function screenController(){
       // const coordY = parseInt(e.target.dataset.column);
       console.log("dropwork")
       dropShip(e);
-      // console.log(gameControllerPlaceholder.getActivePlayerBoardObj())
-      // console.log(gameControllerPlaceholder.getActivePlayerBoard())
+
       updateScreen();
    })
   })
