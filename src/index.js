@@ -107,6 +107,56 @@ function gameBoard() {
           break;
       }
     },
+      placeShipPlayer(ship, row, col, direction) {
+        const shipObj = ship;
+        const startingRowProcessed = row > 9 - (ship.getLength()-1) ? 9 - (ship.getLength()-1) : row
+        const startingColProcessed = col > 9 - (ship.getLength()-1) ? 9 - (ship.getLength()-1) : col
+        switch (direction) {
+          case "horizontal":
+            for (let i = col; i < col+ship.getLength(); i += 1) {
+              if (typeof board[startingRowProcessed][i] === "object" || board[startingRowProcessed][i] === "x") {
+                  return;
+                } // to check if i put a ship, if there is some X or already ship, then just exit func
+            }
+            for (let i = 0; i < ship.getLength(); i += 1) {
+              board[startingRowProcessed][startingColProcessed + i] = cellObj(shipObj);
+            }
+            for (let i = startingRowProcessed - 1; i <= startingRowProcessed + 1; i += 1) {
+              for (let j = startingColProcessed - 1; j < startingColProcessed + ship.getLength() + 1; j += 1) {
+                if (i < 0 || j < 0 || i > 9 || j > 9) { // if out of bound, just continue the loop
+                  continue;
+                }
+                if (board[i][j] === "") {
+                  board[i][j] = "x";
+                }
+              }
+            }
+            break;
+          case "vertical":
+            for (let i = row; i < row+ship.getLength(); i += 1) {
+                if (typeof board[i][startingColProcessed] === "object" || board[i][startingColProcessed] === "x") {
+                    return;
+                  } // to check if i put a ship, if there is some X or already ship, then just exit func
+              }
+            for (let i = 0; i < ship.getLength(); i += 1) {
+              board[startingRowProcessed + i][startingColProcessed] = cellObj(shipObj);
+            }
+            for (let i = row - 1; i <= row + ship.getLength(); i += 1) {
+              for (let j = col - 1; j <= col + 1; j+=1) {
+                if (i < 0 || j < 0 || i > 9 || j > 9) {
+                  continue;
+                }
+                if (board[i][j] === "") {
+                  board[i][j] = "x"; // rather than using x, another better idea is setting every cell with an object, and assign x to 'data' property.
+                }
+              }
+            }
+            break;
+          default:
+            break;
+        }
+      },
+
     isPlaceShipValid(ship, row, col, direction){
       switch(direction) {
         case "horizontal":
@@ -190,10 +240,15 @@ function gameController(){
 
     const getArrayShipPlayer = () => arrayShipPlayer
 
+    const isRoundStartCheck = () => {
+      if(arrayShipPlayer.length === 0){
+        isRoundStart = 1
+        return isRoundStart;
+      }};
      // put ship on the computer gameboard
 
 
-
+    // put computer ship
     const ship4computer = shipFactory("ship4Comp",4);
     const ship3computer = shipFactory("ship3Comp",3);
     const ship2computer = shipFactory("ship2Comp",2);
@@ -201,7 +256,7 @@ function gameController(){
 
 
     const arrayShipPlayerEnemy = [ship4computer, ship3computer, ship2computer, ship1computer];
-
+     
     while(arrayShipPlayerEnemy.length !== 0){
       const currentShip = arrayShipPlayerEnemy.shift();
       let randomRow = Math.floor(Math.random() * (10 - (currentShip.getLength() - 1))) < 0 ? 0 : Math.floor(Math.random() * (10 - (currentShip.getLength() - 1)))
@@ -229,6 +284,8 @@ function gameController(){
     let activePlayerEnemy = players[1];
     let result;
     let isOver = 0;
+    let isRoundStart = 0;
+
 
     function initializeAfterReset(){
       activePlayer = players[0];
@@ -338,7 +395,8 @@ function gameController(){
       getActivePlayerEnemyBoardObj,
       getResultMessage,
       getArrayShipPlayer,
-      resetGameController
+      resetGameController,
+      isRoundStartCheck
     };
 }
 
@@ -350,7 +408,7 @@ function screenController(){
   const winnerResult = document.querySelector(".result");
   const rotateBtn = document.querySelector(".rotate");
   const shipContainers = document.querySelectorAll(".ship-container");
-  const isRotate = 0;
+  let isRotate = 0;
   // even though the active player is going to switch, but every time playRound() the activePlayer will be back to player, so doesnt really matter. in simple terms, after every playRound, activePlayer will be the human1/player1. activePlayer state always player1
   
 
@@ -384,25 +442,29 @@ function screenController(){
        
       })
     })
+    
 
-    // update computerBoard
-    computerBoard.forEach((row,indexI) => {
-      row.forEach((cell,indexJ) => {
-        const cellButton = document.createElement("button");
-        cellButton.classList.add("cell");
-        cellButton.classList.add("button");
-        cellButton.dataset.row = indexI;
-        cellButton.dataset.column = indexJ;
-        if ((typeof cell === "object" && cell.hasBeenHit === true)) {
-          cellButton.style.backgroundColor = "red";
-        } else if (cell === "miss") {
-          cellButton.style.backgroundColor = "grey";
-        } else if((typeof cell === "object" && cell.hasBeenHit === false)) {
-          cellButton.style.backgroundColor = "yellow";
-        }
-        computerContainerDiv.appendChild(cellButton);
-      })
-    })
+
+    // update computerBoard if player already put all the ship
+    if(gameControllerPlaceholder.isRoundStartCheck() === 1){
+      computerBoard.forEach((row,indexI) => {
+        row.forEach((cell,indexJ) => {
+          const cellButton = document.createElement("button");
+          cellButton.classList.add("cell");
+          cellButton.classList.add("button");
+          cellButton.dataset.row = indexI;
+          cellButton.dataset.column = indexJ;
+          if ((typeof cell === "object" && cell.hasBeenHit === true)) {
+            cellButton.style.backgroundColor = "red";
+          } else if (cell === "miss") {
+            cellButton.style.backgroundColor = "grey";
+          } else if((typeof cell === "object" && cell.hasBeenHit === false)) {
+            cellButton.style.backgroundColor = "yellow";
+          }
+          computerContainerDiv.appendChild(cellButton);
+        })
+      })  
+    }
 
    
 
@@ -441,8 +503,8 @@ function screenController(){
   function rotateShip(){
     shipContainers.forEach(item => {
       item.classList.toggle("rotate");
-      isRotate == 0 ? 1 : 0;
     })
+    if(isRotate === 0) {isRotate = 1}  else {isRotate = 0} ;
   }
 
 
@@ -478,9 +540,7 @@ function screenController(){
       // console.log(e.dataTransfer.getData("text/plain"))    
       // const coordX = parseInt(e.target.dataset.row); // DONT FORGET PARSEINT, EVERY INT OR NUMBER HAVE TO BE PARSED (ERROR 1-2 HOURS)
       // const coordY = parseInt(e.target.dataset.column);
-      console.log("dropwork")
       dropShip(e);
-
       updateScreen();
    })
   })
@@ -491,12 +551,14 @@ function screenController(){
     const coordinateX = parseInt(e.target.dataset.row);
     const coordinateY = parseInt(e.target.dataset.column);
         for(let i = 0 ; i < gameControllerPlaceholder.getArrayShipPlayer().length; i+=1){
-          if (gameControllerPlaceholder.getArrayShipPlayer()[i].getShipType() === shipType){
+          if (gameControllerPlaceholder.getArrayShipPlayer()[i].getShipType() === shipType && gameControllerPlaceholder.getActivePlayerBoardObj().isPlaceShipValid(gameControllerPlaceholder.getArrayShipPlayer()[i], coordinateX, coordinateY, isRotate === 0 ? "horizontal" : "vertical" )){
+            document.querySelector(`#${shipType}`).setAttribute("draggable","false")
             const splicedItem = gameControllerPlaceholder.getArrayShipPlayer().splice(i,1)[0]; // use [0] cause in this case, thes splice return array
             console.log(splicedItem);
             console.log(gameControllerPlaceholder.getArrayShipPlayer())
-            gameControllerPlaceholder.getActivePlayerBoardObj().placeShip(splicedItem,coordinateX,coordinateY,"horizontal");
-          updateScreen();
+            gameControllerPlaceholder.getActivePlayerBoardObj().placeShipPlayer(splicedItem,coordinateX,coordinateY,isRotate == 0 ? "horizontal" : "vertical");
+
+            updateScreen();
           }
         }
     }
@@ -507,6 +569,5 @@ screenController();
 
 // another idea (every cell push and cellObj , then add isAvailable prop when placing Ship to add contraints cant put surround oneplusCoords)
 
-// gameController need to have, every time ship added, put the ship in some placeholder array, so can check isEveryShipSunk()
 
 
