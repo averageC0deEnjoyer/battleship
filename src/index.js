@@ -1,12 +1,15 @@
-// import "./style.css"
+// import "./style.css" //after finish everything, dont forget to delete scriptTag and linkTag
 
-function shipFactory(length) {
+function shipFactory(type, length) {
   let shipHit = 0;
 
   const reset = () => {
     shipHit = 0;
   }
   return {
+    getShipType() {
+      return type;
+    },
     getLength() {
       return length;
     },
@@ -71,7 +74,7 @@ function gameBoard() {
           }
           for (let i = row - 1; i <= row + 1; i += 1) {
             for (let j = col - 1; j < col + ship.getLength() + 1; j += 1) {
-              if (i < 0 || j < 0 || i > 9 || j > 9) {
+              if (i < 0 || j < 0 || i > 9 || j > 9) { // if out of bound, just continue the loop
                 continue;
               }
               if (board[i][j] === "") {
@@ -154,22 +157,22 @@ function gameController(){
     const computerGameBoard = gameBoard();
 
     // put ship on the player gameboard
-    const ship4player = shipFactory(4);
-    const ship3player = shipFactory(3);
-    const ship2player = shipFactory(2);
-    const ship1player = shipFactory(1);
+    const ship4player = shipFactory("ship4", 4);
+    const ship3player = shipFactory("ship3", 3);
+    const ship2player = shipFactory("ship2", 2);
+    const ship1player = shipFactory("ship1", 1);
 
-    player1GameBoard.placeShip(ship4player, 2, 2, "horizontal");
-    player1GameBoard.placeShip(ship3player, 4, 4, "vertical");
-    player1GameBoard.placeShip(ship2player, 6, 6, "horizontal");
-    player1GameBoard.placeShip(ship1player, 8, 8, "horizontal");
+    const arrayShipPlayer = [ship4player,ship3player,ship2player,ship1player]
 
     // put ship on the computer gameboard
 
-    const ship4computer = shipFactory(4);
-    const ship3computer = shipFactory(3);
-    const ship2computer = shipFactory(2);
-    const ship1computer = shipFactory(1);
+    const getArrayShipPlayer = () => arrayShipPlayer
+
+
+    const ship4computer = shipFactory("ship4Comp",4);
+    const ship3computer = shipFactory("ship3Comp",3);
+    const ship2computer = shipFactory("ship2Comp",2);
+    const ship1computer = shipFactory("ship1Comp",1);
     computerGameBoard.placeShip(ship4computer, 1, 1, "horizontal");
     computerGameBoard.placeShip(ship3computer, 4, 4, "vertical");
     computerGameBoard.placeShip(ship2computer, 6, 6, "horizontal");
@@ -278,7 +281,7 @@ function gameController(){
       
       }
 
-      const resetGame = () => {
+      const resetGameController = () => {
         player1GameBoard.reset();
         computerGameBoard.reset();
         initializeAfterReset();
@@ -292,7 +295,8 @@ function gameController(){
       getActivePlayerBoardObj,
       getActivePlayerEnemyBoardObj,
       getResultMessage,
-      resetGame
+      getArrayShipPlayer,
+      resetGameController
     };
 }
 
@@ -301,7 +305,10 @@ function screenController(){
   const gameControllerPlaceholder = gameController();
   const playerContainerDiv = document.querySelector(".player-container");
   const computerContainerDiv = document.querySelector(".computer-container");
-  const winnerResult = document.querySelector(".result")
+  const winnerResult = document.querySelector(".result");
+  const rotateBtn = document.querySelector(".rotate");
+  const shipContainers = document.querySelectorAll(".ship-container");
+  const isRotate = 0;
   // even though the active player is going to switch, but every time playRound() the activePlayer will be back to player, so doesnt really matter. in simple terms, after every playRound, activePlayer will be the human1/player1. activePlayer state always player1
   
 
@@ -315,7 +322,7 @@ function screenController(){
     playerBoard.forEach((row,indexI) => {
       row.forEach((cell,indexJ) => {
         const cellDiv = document.createElement("div");
-        cellDiv.classList.add("cell");
+        cellDiv.classList.add("cell-player");
         cellDiv.dataset.row = indexI;
         cellDiv.dataset.column = indexJ;
         if(typeof cell === "object" && cell.hasBeenHit === false){
@@ -325,7 +332,14 @@ function screenController(){
         } else if (cell === "miss") {
           cellDiv.style.backgroundColor = "grey";
         }
+        cellDiv.addEventListener("dragover", e =>{
+          e.preventDefault();
+         });
+        cellDiv.addEventListener("drop", (e)=>{
+          e.preventDefault();
+          dropShip(e);})
         playerContainerDiv.appendChild(cellDiv);
+       
       })
     })
 
@@ -346,11 +360,7 @@ function screenController(){
       })
     })
 
-    // if someone wins, display the winner to the DOM. 
-    if(gameControllerPlaceholder.getActivePlayerBoardObj().isAllShipSunk() || gameControllerPlaceholder.getActivePlayerEnemyBoardObj().isAllShipSunk()) {
-      showWinner();
-    }
-  }
+   
 
   function showWinner(){
     winnerResult.textContent = gameControllerPlaceholder.getResultMessage();
@@ -358,16 +368,20 @@ function screenController(){
     resetBtn.textContent = "reset";
     winnerResult.appendChild(resetBtn);
     resetBtn.addEventListener("click", ()=>{
-      gameControllerPlaceholder.resetGame();
+      gameControllerPlaceholder.resetGameController();
       winnerResult.textContent = gameControllerPlaceholder.getResultMessage();
       updateScreen();
       resetBtn.remove();
     });
   }
 
+   // if someone wins, display the winner to the DOM. 
+   if(gameControllerPlaceholder.getActivePlayerBoardObj().isAllShipSunk() || gameControllerPlaceholder.getActivePlayerEnemyBoardObj().isAllShipSunk()) {
+    showWinner();
+  }
+  }
 
-
-  function clickHandlerBoard(e){
+  function clickHandlerBoard(e){ // for attacking computerBoard
     const selectedRow = e.target.dataset.row;
     const selectedColumn = e.target.dataset.column;
 
@@ -380,9 +394,70 @@ function screenController(){
   computerContainerDiv.addEventListener("click",clickHandlerBoard);
 
 
+  function rotateShip(){
+    shipContainers.forEach(item => {
+      item.classList.toggle("rotate");
+      isRotate == 0 ? 1 : 0;
+    })
+  }
+
+
+  rotateBtn.addEventListener("click", rotateShip)
+
 
   updateScreen();// initial render
-}
+  
+
+  function dragStarter(element){
+    element.addEventListener("dragstart", event=>{
+      event.dataTransfer.setData("text/plain", event.target.id);
+    });
+  }
+  
+  // initialize drag item
+  shipContainers.forEach(item => {
+    console.log(item)
+    dragStarter(item);
+  })
+
+  const cellsDiv = document.querySelectorAll(".cell-player")
+
+  cellsDiv.forEach(cell=>{
+    cell.addEventListener("dragover", e =>{
+      e.preventDefault();
+     })
+  })
+
+  cellsDiv.forEach(cell=>{
+    cell.addEventListener("drop", (e)=>{
+      e.preventDefault();
+      // console.log(e.dataTransfer.getData("text/plain"))    
+      // const coordX = parseInt(e.target.dataset.row); // DONT FORGET PARSEINT, EVERY INT OR NUMBER HAVE TO BE PARSED (ERROR 1-2 HOURS)
+      // const coordY = parseInt(e.target.dataset.column);
+      console.log("dropwork")
+      dropShip(e);
+      // console.log(gameControllerPlaceholder.getActivePlayerBoardObj())
+      // console.log(gameControllerPlaceholder.getActivePlayerBoard())
+      updateScreen();
+   })
+  })
+
+  // when drop ship, run placeShip method and also check if arrayShip empty? if yes then game start
+  function dropShip(e){
+    const shipType = e.dataTransfer.getData("text/plain");
+    const coordinateX = parseInt(e.target.dataset.row);
+    const coordinateY = parseInt(e.target.dataset.column);
+        for(let i = 0 ; i < gameControllerPlaceholder.getArrayShipPlayer().length; i+=1){
+          if (gameControllerPlaceholder.getArrayShipPlayer()[i].getShipType() === shipType){
+            const splicedItem = gameControllerPlaceholder.getArrayShipPlayer().splice(i,1)[0]; // use [0] cause in this case, thes splice return array
+            console.log(splicedItem);
+            console.log(gameControllerPlaceholder.getArrayShipPlayer())
+            gameControllerPlaceholder.getActivePlayerBoardObj().placeShip(splicedItem,coordinateX,coordinateY,"horizontal");
+          updateScreen();
+          }
+        }
+    }
+  }
 
 
 screenController();
