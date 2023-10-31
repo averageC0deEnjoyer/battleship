@@ -3,7 +3,7 @@
 function shipFactory(type, length) {
   let shipHit = 0;
 
-  const reset = () => {
+  const resetBoard = () => {
     shipHit = 0;
   }
   return {
@@ -26,7 +26,7 @@ function shipFactory(type, length) {
       }
       return false;
     },
-    reset
+    resetBoard
   };
 }
 
@@ -44,7 +44,7 @@ function gameBoard() {
     data, // to save ship object data
   });
 
-  const reset = () => {
+  const resetBoard = () => {
     for (let i = 0; i < 10; i += 1) {
       for (let j = 0; j < 10; j += 1) {
         board[i][j] = "";
@@ -107,57 +107,61 @@ function gameBoard() {
           break;
       }
     },
-      placeShipPlayer(ship, row, col, direction) {
-        const shipObj = ship;
-        const startingRowProcessed = row > 9 - (ship.getLength()-1) ? 9 - (ship.getLength()-1) : row
-        const startingColProcessed = col > 9 - (ship.getLength()-1) ? 9 - (ship.getLength()-1) : col
-        switch (direction) {
-          case "horizontal":
-            for (let i = col; i < col+ship.getLength(); i += 1) {
-              if (typeof board[startingRowProcessed][i] === "object" || board[startingRowProcessed][i] === "x") {
+    placeShipPlayer(ship, row, col, direction) {
+      const shipObj = ship;
+      let startingRowProcessed;
+      let startingColProcessed;
+      switch (direction) {
+        case "horizontal":
+          startingRowProcessed = row
+          startingColProcessed = col > 9 - (ship.getLength()-1) ? 9 - (ship.getLength()-1) : col
+          for (let i = 0; i < ship.getLength(); i += 1) {
+            if (typeof board[startingRowProcessed][startingColProcessed + i] === "object" || board[startingRowProcessed][startingColProcessed + i] === "x") {
+                return;
+              } // to check if i put a ship, if there is some X or already ship, then just exit func
+          }
+          for (let i = 0; i < ship.getLength(); i += 1) {
+            board[startingRowProcessed][startingColProcessed + i] = cellObj(shipObj);
+          }
+          for (let i = startingRowProcessed - 1; i <= startingRowProcessed + 1; i += 1) {
+            for (let j = startingColProcessed - 1; j < startingColProcessed + ship.getLength() + 1; j += 1) {
+              if (i < 0 || j < 0 || i > 9 || j > 9) { // if out of bound, just continue the loop
+                continue;
+              }
+              if (board[i][j] === "") {
+                board[i][j] = "x";
+              }
+            }
+          }
+          break;
+        case "vertical":
+          startingRowProcessed = row > 9 - (ship.getLength()-1) ? 9 - (ship.getLength()-1) : row
+          startingColProcessed = col 
+          for (let i = 0; i < ship.getLength(); i += 1) {
+              if (typeof board[startingRowProcessed + i][startingColProcessed] === "object" || board[startingRowProcessed + i][startingColProcessed] === "x") {
                   return;
                 } // to check if i put a ship, if there is some X or already ship, then just exit func
             }
-            for (let i = 0; i < ship.getLength(); i += 1) {
-              board[startingRowProcessed][startingColProcessed + i] = cellObj(shipObj);
-            }
-            for (let i = startingRowProcessed - 1; i <= startingRowProcessed + 1; i += 1) {
-              for (let j = startingColProcessed - 1; j < startingColProcessed + ship.getLength() + 1; j += 1) {
-                if (i < 0 || j < 0 || i > 9 || j > 9) { // if out of bound, just continue the loop
-                  continue;
-                }
-                if (board[i][j] === "") {
-                  board[i][j] = "x";
-                }
+          for (let i = 0; i < ship.getLength(); i += 1) {
+            board[startingRowProcessed + i][startingColProcessed] = cellObj(shipObj);
+          }
+          for (let i = startingRowProcessed- 1; i <= startingRowProcessed + ship.getLength(); i += 1) {
+            for (let j = startingColProcessed - 1; j <= startingColProcessed + 1; j+=1) {
+              if (i < 0 || j < 0 || i > 9 || j > 9) {
+                continue;
+              }
+              if (board[i][j] === "") {
+                board[i][j] = "x"; // rather than using x, another better idea is setting every cell with an object, and assign x to 'data' property.
               }
             }
-            break;
-          case "vertical":
-            for (let i = row; i < row+ship.getLength(); i += 1) {
-                if (typeof board[i][startingColProcessed] === "object" || board[i][startingColProcessed] === "x") {
-                    return;
-                  } // to check if i put a ship, if there is some X or already ship, then just exit func
-              }
-            for (let i = 0; i < ship.getLength(); i += 1) {
-              board[startingRowProcessed + i][startingColProcessed] = cellObj(shipObj);
-            }
-            for (let i = row - 1; i <= row + ship.getLength(); i += 1) {
-              for (let j = col - 1; j <= col + 1; j+=1) {
-                if (i < 0 || j < 0 || i > 9 || j > 9) {
-                  continue;
-                }
-                if (board[i][j] === "") {
-                  board[i][j] = "x"; // rather than using x, another better idea is setting every cell with an object, and assign x to 'data' property.
-                }
-              }
-            }
-            break;
-          default:
-            break;
-        }
-      },
+          }
+          break;
+        default:
+          break;
+      }
+    },
 
-    isPlaceShipValid(ship, row, col, direction){
+    isPlaceShipValidComputer(ship, row, col, direction){
       switch(direction) {
         case "horizontal":
           for (let i = col; i < col+ship.getLength(); i += 1) {
@@ -170,6 +174,33 @@ function gameBoard() {
         case "vertical":
           for (let i = row; i < row+ship.getLength(); i += 1) {
             if (typeof board[i][col] === "object" || board[i][col] === "x") {
+                return false;
+              } 
+          }
+          return true;
+
+          default:
+            break;
+      }
+    },
+    isPlaceShipValidPlayer(ship, row, col, direction){
+      let startingRowProcessed;
+      let startingColProcessed;            
+      switch(direction) {
+        case "horizontal":
+          startingRowProcessed = row
+          startingColProcessed = col > 9 - (ship.getLength()-1) ? 9 - (ship.getLength()-1) : col
+          for (let i = 0; i < ship.getLength(); i += 1) {
+            if (typeof board[row][startingColProcessed + i] === "object" || board[row][startingColProcessed + i] === "x") {
+                return false;
+              } 
+          }
+          return true;
+        case "vertical":
+          startingRowProcessed = row > 9 - (ship.getLength()-1) ? 9 - (ship.getLength()-1) : row
+          startingColProcessed = col 
+          for (let i = 0; i < ship.getLength(); i += 1) {
+            if (typeof board[startingRowProcessed + i][col] === "object" || board[startingRowProcessed + i][col] === "x") {
                 return false;
               } 
           }
@@ -202,7 +233,7 @@ function gameBoard() {
       }
       return true;
     },
-    reset
+    resetBoard
   };
 }
 
@@ -223,57 +254,52 @@ function Player(name, board) {
 
 function gameController(){
     
+  const getArrayShipPlayer = () => arrayShipPlayer
+
+  const isRoundStartCheck = () => {
+    if(arrayShipPlayer.length === 0){
+      isRoundStart = 1
+      return isRoundStart;
+    }};
   
-    // initialize gameboard
-    const player1GameBoard = gameBoard(); 
-    const computerGameBoard = gameBoard();
+  // initialize gameboard
+  const player1GameBoard = gameBoard(); 
+  const computerGameBoard = gameBoard();
 
-    // put ship on the player gameboard
-    const ship4player = shipFactory("ship4", 4);
-    const ship3player = shipFactory("ship3", 3);
-    const ship2player = shipFactory("ship2", 2);
-    const ship1player = shipFactory("ship1", 1);
+  // make player ship
+   const ship4player = shipFactory("ship4", 4);
+   const ship3player = shipFactory("ship3", 3);
+   const ship2player = shipFactory("ship2", 2);
+   const ship1player = shipFactory("ship1", 1);
+   const arrayShipPlayer = [ship4player,ship3player,ship2player,ship1player]
 
-    const arrayShipPlayer = [ship4player,ship3player,ship2player,ship1player]
+  // make computer ship
+  const ship4computer = shipFactory("ship4Comp",4);
+  const ship3computer = shipFactory("ship3Comp",3);
+  const ship2computer = shipFactory("ship2Comp",2);
+  const ship1computer = shipFactory("ship1Comp",1);
 
-
-
-    const getArrayShipPlayer = () => arrayShipPlayer
-
-    const isRoundStartCheck = () => {
-      if(arrayShipPlayer.length === 0){
-        isRoundStart = 1
-        return isRoundStart;
-      }};
-     // put ship on the computer gameboard
-
-
-    // put computer ship
-    const ship4computer = shipFactory("ship4Comp",4);
-    const ship3computer = shipFactory("ship3Comp",3);
-    const ship2computer = shipFactory("ship2Comp",2);
-    const ship1computer = shipFactory("ship1Comp",1);
-
-
-    const arrayShipPlayerEnemy = [ship4computer, ship3computer, ship2computer, ship1computer];
-     
+  const arrayShipPlayerEnemy = [ship4computer, ship3computer, ship2computer, ship1computer];
+  
+  // place computer ship randomly
+  function placeComputerShipRandomly(){
     while(arrayShipPlayerEnemy.length !== 0){
       const currentShip = arrayShipPlayerEnemy.shift();
       let randomRow = Math.floor(Math.random() * (10 - (currentShip.getLength() - 1))) < 0 ? 0 : Math.floor(Math.random() * (10 - (currentShip.getLength() - 1)))
       let randomCol = Math.floor(Math.random() * (10 - (currentShip.getLength() - 1))) < 0 ? 0 : Math.floor(Math.random() * (10 - (currentShip.getLength() - 1)))
       let direction = Math.floor(Math.random() * 2) === 1 ? "vertical" : "horizontal";
-
-      let isValid = computerGameBoard.isPlaceShipValid(currentShip,randomRow, randomCol, direction)
+      let isValid = computerGameBoard.isPlaceShipValidComputer(currentShip,randomRow, randomCol, direction)
         while(!isValid){
           randomRow = Math.floor(Math.random() * (10 - (currentShip.getLength() - 1))) < 0 ? 0 : Math.floor(Math.random() * (10 - (currentShip.getLength() - 1)))
           randomCol = Math.floor(Math.random() * (10 - (currentShip.getLength() - 1))) < 0 ? 0 : Math.floor(Math.random() * (10 - (currentShip.getLength() - 1)))
           direction = Math.floor(Math.random() * 2) === 1 ? "vertical" : "horizontal";
-          isValid = computerGameBoard.isPlaceShipValid(currentShip,randomRow, randomCol, direction);
+          isValid = computerGameBoard.isPlaceShipValidComputer(currentShip,randomRow, randomCol, direction);
         }
-
         computerGameBoard.placeShip(currentShip, randomRow, randomCol, direction)
-      }
+      }  
+  }
 
+  placeComputerShipRandomly()
 
     // initialize player 
     const player1 = Player("player1", player1GameBoard);
@@ -283,8 +309,8 @@ function gameController(){
     let activePlayer = players[0];
     let activePlayerEnemy = players[1];
     let result;
-    let isOver = 0;
-    let isRoundStart = 0;
+    let isOver = 0; 
+    let isRoundStart = 0; // if player hasnt place all the ship, then enemy board wont show up
 
 
     function initializeAfterReset(){
@@ -292,27 +318,26 @@ function gameController(){
       activePlayerEnemy = players[1];
       result = "";
       isOver = 0;
+      isRoundStart = 0
 
-      ship4player.reset()
-      ship3player.reset()
-      ship2player.reset()
-      ship1player.reset()
+      ship4player.resetBoard()
+      ship3player.resetBoard()
+      ship2player.resetBoard()
+      ship1player.resetBoard()
+      arrayShipPlayer.push(ship4player)
+      arrayShipPlayer.push(ship3player)
+      arrayShipPlayer.push(ship2player)
+      arrayShipPlayer.push(ship1player)
 
-      ship4computer.reset()
-      ship3computer.reset()
-      ship2computer.reset()
-      ship1computer.reset()
-
-      player1GameBoard.placeShip(ship4player, 0, 0, "vertical");
-      player1GameBoard.placeShip(ship3player, 4, 4, "vertical");
-      player1GameBoard.placeShip(ship2player, 6, 6, "horizontal");
-      player1GameBoard.placeShip(ship1player, 8, 8, "horizontal");
-
-      computerGameBoard.placeShip(ship4computer, 1, 1, "horizontal");
-      computerGameBoard.placeShip(ship3computer, 4, 4, "vertical");
-      computerGameBoard.placeShip(ship2computer, 6, 6, "horizontal");
-      computerGameBoard.placeShip(ship1computer, 8, 8, "horizontal");
-
+      ship4computer.resetBoard()
+      ship3computer.resetBoard()
+      ship2computer.resetBoard()
+      ship1computer.resetBoard()
+      arrayShipPlayerEnemy.push(ship4computer)
+      arrayShipPlayerEnemy.push(ship3computer)
+      arrayShipPlayerEnemy.push(ship2computer)
+      arrayShipPlayerEnemy.push(ship1computer)
+      placeComputerShipRandomly()
     }
 
 
@@ -381,10 +406,12 @@ function gameController(){
       }
 
       const resetGameController = () => {
-        player1GameBoard.reset();
-        computerGameBoard.reset();
+        player1GameBoard.resetBoard();
+        computerGameBoard.resetBoard();
         initializeAfterReset();
       }    
+
+      const isGameOver = () => isOver
     return {
       playRound,
       getActivePlayerName,
@@ -396,7 +423,8 @@ function gameController(){
       getResultMessage,
       getArrayShipPlayer,
       resetGameController,
-      isRoundStartCheck
+      isRoundStartCheck,
+      isGameOver
     };
 }
 
@@ -439,7 +467,6 @@ function screenController(){
           e.preventDefault();
           dropShip(e);})
         playerContainerDiv.appendChild(cellDiv);
-       
       })
     })
     
@@ -471,18 +498,19 @@ function screenController(){
   function showWinner(){
     winnerResult.textContent = gameControllerPlaceholder.getResultMessage();
     const resetBtn = document.createElement("button")
-    resetBtn.textContent = "reset";
+    resetBtn.textContent = "resetBoard";
     winnerResult.appendChild(resetBtn);
     resetBtn.addEventListener("click", ()=>{
       gameControllerPlaceholder.resetGameController();
       winnerResult.textContent = gameControllerPlaceholder.getResultMessage();
       updateScreen();
+      shipContainers.forEach(item => item.setAttribute("draggable","true"))
       resetBtn.remove();
     });
   }
 
    // if someone wins, display the winner to the DOM. 
-   if(gameControllerPlaceholder.getActivePlayerBoardObj().isAllShipSunk() || gameControllerPlaceholder.getActivePlayerEnemyBoardObj().isAllShipSunk()) {
+   if(gameControllerPlaceholder.isGameOver() === 1) {
     showWinner();
   }
   }
@@ -551,13 +579,10 @@ function screenController(){
     const coordinateX = parseInt(e.target.dataset.row);
     const coordinateY = parseInt(e.target.dataset.column);
         for(let i = 0 ; i < gameControllerPlaceholder.getArrayShipPlayer().length; i+=1){
-          if (gameControllerPlaceholder.getArrayShipPlayer()[i].getShipType() === shipType && gameControllerPlaceholder.getActivePlayerBoardObj().isPlaceShipValid(gameControllerPlaceholder.getArrayShipPlayer()[i], coordinateX, coordinateY, isRotate === 0 ? "horizontal" : "vertical" )){
+          if (gameControllerPlaceholder.getArrayShipPlayer()[i].getShipType() === shipType && gameControllerPlaceholder.getActivePlayerBoardObj().isPlaceShipValidPlayer(gameControllerPlaceholder.getArrayShipPlayer()[i], coordinateX, coordinateY, isRotate === 0 ? "horizontal" : "vertical" )){
             document.querySelector(`#${shipType}`).setAttribute("draggable","false")
             const splicedItem = gameControllerPlaceholder.getArrayShipPlayer().splice(i,1)[0]; // use [0] cause in this case, thes splice return array
-            console.log(splicedItem);
-            console.log(gameControllerPlaceholder.getArrayShipPlayer())
             gameControllerPlaceholder.getActivePlayerBoardObj().placeShipPlayer(splicedItem,coordinateX,coordinateY,isRotate == 0 ? "horizontal" : "vertical");
-
             updateScreen();
           }
         }
