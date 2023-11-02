@@ -4,16 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- <script src="index.js" defer></script> -->
 <script defer src="bundle.js"></script></head>
 <body>
     <div class="header">
-        
+        whatAHeader
     </div>
     <div class="main">
-
+        <div class="player-container">
+            
+        </div>
+        <div class="player-ship">
+            <p draggable="false">Place your ship!</p>
+            <div class="ship-container 4" draggable="true" data-length = 4 id="ship4">
+                <div class="ship"></div>
+                <div class="ship"></div>
+                <div class="ship"></div>
+                <div class="ship"></div>
+            </div>
+            <div class="ship-container 3" draggable="true" data-length = 3 id="ship3">
+                <div class="ship"></div>
+                <div class="ship"></div>
+                <div class="ship"></div>
+            </div>
+            <div class="ship-container 2" draggable="true" data-length = 2 id="ship2">
+                <div class="ship"></div>
+                <div class="ship"></div>
+            </div>
+            <div class="ship-container 1" draggable="true" data-length = 1 id="ship1">
+                <div class="ship"></div>
+            </div>
+            <button class="rotate">rotate</button>
+        </div>
+        <div class="computer-container">
+            tes3
+        </div>
+    </div>
+    <div class="result">
+        
     </div>
     <div class="footer">
-
+        testFooter
     </div>
 </body>
 </html>
+
+
+<!-- if we are in src, just use live server(cause npx live server cant update template.html if theres changes. but live server in src need scriptTag and linkTag, dont forget to delete this Tag after done) -->
